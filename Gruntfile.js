@@ -100,7 +100,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-samsungstv-packager');
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-contrib-requirejs');
-    grunt.registerTask('server', ['express:dev']);
+    grunt.registerTask('server', ['build','express:dev']);
     grunt.registerTask('deploy', ['samsung']);
     grunt.registerTask('build', ['jshint', 'requirejs:dist', 'sync:assets', 'sync:src']);
     grunt.registerTask('default', ['build']);

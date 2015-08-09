@@ -1,8 +1,7 @@
- define(['jquery', 'underscore', 'Q', 'others/Cache'],
-    function($, _, Q, Cache) {
+ define(['jquery', 'underscore', 'Q', 'others/Cache', 'others/language'],
+    function($, _, Q, Cache, Lang) {
     "use strict";
 
-    //var request = require('request');
     function request (uri, options, callback) {
         if (typeof uri === 'undefined') throw new Error('undefined is not a valid uri or options object.');
         if ((typeof options === 'function') && !callback) callback = options;
@@ -29,7 +28,11 @@
         if(options.timeout)
             jqueryOptions.timeout = options.timeout;
 
-        jqueryOptions.timeout = options.crossDomain;
+        jqueryOptions.crossDomain = options.crossDomain;
+
+        if (options.crossDomain && $.support.cors) {
+            jqueryOptions.url = 'http://localhost:3000/proxy/' + jqueryOptions.url;
+        }
 
         $.ajax(jqueryOptions)
             .done(function(data, status, xhr) {
@@ -87,12 +90,12 @@
             // Iterate each language
             _.each(langs, function(subs, lang) {
                 // Pick highest rated
-                var langCode = App.Localization.languageMapping[lang];
+                var langCode = Lang.languageMapping[lang];
                 movieSubs[langCode] = prefix + _.max(subs, function(s){return s.rating;}).url;
             });
 
             // Remove unsupported subtitles
-            var filteredSubtitle = App.Localization.filterSubtitle(movieSubs);
+            var filteredSubtitle = Lang.filterSubtitle(movieSubs);
 
             allSubs[imdbId.replace('tt','')] = filteredSubtitle;
         });

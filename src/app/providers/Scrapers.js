@@ -62,7 +62,7 @@
     // Hack to keep to cancel the request in case of new request
     var currentRequest = null;
     var Yts = Backbone.Collection.extend({
-        apiUrl:"https://yts.re/api/list.json?sort=seeds&limit=30",
+        apiUrl:"https://yts.to/api/v2/list_movies.json?sort=seeds&limit=30",
         model: Movie,
         movies: [],
 
@@ -93,8 +93,9 @@
         },
 
         addMovie: function(model) {
-            var stored = _.find(this.movies, function(movie) { return (movie.imdb == model.imdb); });
-
+            console.log(this.movies);
+            var stored = _.find(this.movies, function(movie) { return (movie.imdb_code == model.imdb); });
+            console.log(stored);
             // Create it on memory map if it doesn't exist.
             if (typeof stored === 'undefined') {
                 stored = model;
@@ -132,10 +133,12 @@
                 console.timeEnd('YTS Request Took');
                 var i = 0;
 
-                if(err) {
+                if(status === 'error') {
                     collection.trigger('error');
                     return;
                 }
+
+                ytsData.MovieList = ytsData.data.movies;
 
                 if (ytsData.error || typeof ytsData.MovieList === 'undefined') {
                     collection.set(collection.movies);
@@ -143,10 +146,12 @@
                     return;
                 }
 
-                var imdbIds = _.unique(_.pluck(ytsData.MovieList, 'ImdbCode'));
+                var imdbIds = _.unique(_.pluck(ytsData.MovieList, 'imdb_code'));
 
                 Ysubs.fetch(_.map(imdbIds, function(id){return id.replace('tt','');}))
                 .then(function(subtitles) {
+                    console.log(subtitles);
+                    
                     async.filterSeries(
                       imdbIds,
                       function(cd, cb) { Cache.getItem('trakttv', cd, function(d) { cb(d === undefined); }); },

@@ -26,6 +26,10 @@ define(['jquery'],
 			if(options.timeout)
 				jqueryOptions.timeout = options.timeout;
 
+			if (options.crossDomain && $.support.cors) {
+            	jqueryOptions.url = 'http://localhost:3000/proxy/' + jqueryOptions.url;
+        	}
+
 			$.ajax(jqueryOptions)
 				.done(function(data, status, xhr) {
 					callback(undefined, xhr, data);

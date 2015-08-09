@@ -1,4 +1,4 @@
-    require.config({
+require.config({
     baseUrl:"./src/app",
     // 3rd party script alias names (Easier to type "jquery" than "libs/jquery, etc")
     // probably a good idea to keep version numbers in the file names for updates checking
