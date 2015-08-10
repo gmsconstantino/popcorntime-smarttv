@@ -1,5 +1,5 @@
-define(['jquery'],
-	function($) {
+define(['jquery', 'underscore', 'Q'],
+	function($, _, Q) {
 		// Tempoary wrapper around $.get for request
 		function request (uri, options, callback) {
 			if (typeof uri === 'undefined') throw new Error('undefined is not a valid uri or options object.');
@@ -27,7 +27,7 @@ define(['jquery'],
 				jqueryOptions.timeout = options.timeout;
 
 			if (options.crossDomain && $.support.cors) {
-            	jqueryOptions.url = 'http://localhost:3000/proxy/' + jqueryOptions.url;
+            	jqueryOptions.url = 'http://192.168.1.65:3000/proxy/' + jqueryOptions.url;
         	}
 
 			$.ajax(jqueryOptions)
@@ -39,9 +39,12 @@ define(['jquery'],
 				});
 		}
 
-		var API_ENDPOINT = window.URI('http://api.trakt.tv/'),
-			MOVIE_PATH = 'movie',
-			API_KEY = '7b7b93f7f00f8e4b488dcb3c5baa81e1619bb074';
+		var MOVIE_PATH = 'movie';
+
+		var API_ENDPOINT = URI('https://api-v2launch.trakt.tv'),
+        CLIENT_ID = 'c7e20abc718e46fc75399dd6688afca9ac83cd4519c9cb1fba862b37b8640e89',
+        CLIENT_SECRET = '476cf15ed52542c2c8dc502821280aa5f61a012db57f1ed1f479aaf88ab385cb',
+        REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob';
 
 		function MovieCollection(imdbIDs) {
 			this.ids = imdbIDs;
@@ -54,20 +57,27 @@ define(['jquery'],
 				return;
 			}
 
-			var uri = API_ENDPOINT.clone()
-						.segment([
-							MOVIE_PATH,
-							'summaries.json',
-							API_KEY,
-							this.ids.sort().join(','),
-							'full'
-						]);
+			data = [];
+			ids = this.ids;
 
-			console.debug('Requesting from Trakt.tv: %s', uri.toString());
-			console.time('Trakt.tv Request Took');
-			request(uri.toString(), {json: true, crossDomain:true}, function(err, res, body) {
-				console.timeEnd('Trakt.tv Request Took');
-				callback(body);
+			this.ids.forEach(function (id){
+				var uri = API_ENDPOINT.clone().segment(['movies', id]);
+				uri = uri.toString() + '?extended=full,images';
+
+		        console.debug('Requesting from Trakt.tv: %s', uri);
+				console.time('Trakt.tv Request Took');
+				request(uri, {json: true, crossDomain:true, 
+					headers: {
+	                'Content-Type': 'application/json',
+	                'trakt-api-version': '2',
+	                'trakt-api-key': CLIENT_ID
+	            }}, function(err, res, body) {
+					console.timeEnd('Trakt.tv Request Took');
+					data.push(JSON.parse(res.responseText));
+
+					if(data.length === ids.length)
+						callback(data);
+				});
 			});
 		};
 

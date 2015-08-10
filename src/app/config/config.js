@@ -12,8 +12,9 @@ require.config({
         "Q":"../libs/q",
         'URI': '../libs/URI',
         'async': '../libs/async',
+        'jscache': '../libs/cache',
         // Plugins
-        "text":"../libs/plugins/text",
+        "text": "../libs/plugins/text",
     },
     // Sets the configuration for your third party scripts that are not AMD compatible
     shim:{

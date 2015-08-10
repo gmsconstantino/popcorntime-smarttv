@@ -154,7 +154,9 @@
                     
                     async.filterSeries(
                       imdbIds,
-                      function(cd, cb) { Cache.getItem('trakttv', cd, function(d) { cb(d === undefined); }); },
+                      function(cd, cb) { 
+                        Cache.getItem('trakttv', cd, function(d) { cb(d === null); }); 
+                      },
                       function(imdbCodes) {
 
                         var traktMovieCollection = new trakt.MovieCollection(imdbCodes);
@@ -166,30 +168,32 @@
                             i = ytsData.MovieList.length;
                             ytsData.MovieList.forEach(function (movie) {
                                 // No imdb, no movie.
-                                if( typeof movie.ImdbCode != 'string' || movie.ImdbCode.replace('tt', '') === '' ){ return; }
+                                if( typeof movie.imdb_code != 'string' || movie.imdb_code.replace('tt', '') === '' ){ return; }
 
-                                var traktInfo = _.find(trakData, function(trakMovie) { return trakMovie.imdb_id == movie.ImdbCode; });
+                                var traktInfo = _.find(trakData, function(trakMovie) { return trakMovie.ids.imdb == movie.imdb_code; });
 
                                 var torrents = {};
-                                torrents[movie.Quality] = movie.TorrentUrl;
+                                movie.torrents.forEach(function(torrent){
+                                    torrents[torrent.quality] = torrent.url;
+                                });
 
-                                var imdbId = movie.ImdbCode.replace('tt', '');
-                                var voteAverage = movie.MovieRating ? parseFloat(movie.MovieRating).toFixed(1) : 0.0;
+                                var imdbId = movie.imdb_code.replace('tt', '');
+                                var voteAverage = movie.rating ? parseFloat(movie.rating).toFixed(1) : 0.0;
                                 // Temporary object
                                 var movieModel = {
                                     imdb:       imdbId,
-                                    title:      movie.MovieTitleClean.replace(/\([^)]*\)|1080p|DIRECTORS CUT|EXTENDED|UNRATED|3D|[()]/g, ''),
-                                    year:       movie.MovieYear,
+                                    title:      movie.title,
+                                    year:       movie.year,
                                     runtime:    0,
-                                    synopsis:   '',
-                                    voteAverage:voteAverage,
+                                    synopsis:   movie.overview,
+                                    voteAverage: voteAverage,
                                     stars:      getStars(voteAverage),
-                                    is720p:     (movie.Quality === '720p'),
-                                    is1080p:    (movie.Quality === '1080p'),
-                                    hasSDAndHD: (movie.Quality === '720p' && movie.Quality === '1080p'),
+                                    is720p:     (torrents['720p'] !== undefined),
+                                    is1080p:    (torrents['1080p'] !== undefined),
+                                    hasSDAndHD: (torrents['720p'] !== undefined && torrents['1080p'] !== undefined),
 
-                                    image:      movie.CoverImage.replace(/_med\./, '_large.'),
-                                    bigImage:   movie.CoverImage.replace(/_med\./, '_large.'),
+                                    image:      movie.small_cover_image,
+                                    bigImage:   movie.medium_cover_image,
                                     backdrop:   '',
 
                                     quality:    movie.Quality,
@@ -205,12 +209,12 @@
                                 };
 
                                 if(traktInfo) {
-                                    movieModel.image = trakt.resizeImage(traktInfo.images.poster, '138');
-                                    movieModel.bigImage = trakt.resizeImage(traktInfo.images.poster, '300');
-                                    movieModel.backdrop = trakt.resizeImage(traktInfo.images.fanart, '940');
+                                    movieModel.image = traktInfo.images.poster.thumb;
+                                    movieModel.bigImage = traktInfo.images.poster.full;
+                                    movieModel.backdrop = traktInfo.images.fanart.full;
                                     movieModel.synopsis = traktInfo.overview;
                                     movieModel.runtime = +traktInfo.runtime;
-                                    Cache.setItem('trakttv', traktInfo.imdb_id, traktInfo);
+                                    Cache.setItem('trakttv', traktInfo.ids.imdb, traktInfo);
                                     console.warn('Trakt.tv Cache Miss %O', traktInfo);
                                     collection.addMovie(movieModel);
                                     if(--i === 0) {
@@ -218,11 +222,11 @@
                                         collection.trigger('loaded');
                                     }
                                 } else {
-                                    Cache.getItem('trakttv', movie.ImdbCode, function(traktInfo) {
+                                    Cache.getItem('trakttv', movie.imdb_code, function(traktInfo) {
                                         if(traktInfo) {
-                                            movieModel.image = trakt.resizeImage(traktInfo.images.poster, '138');
-                                            movieModel.bigImage = trakt.resizeImage(traktInfo.images.poster, '300');
-                                            movieModel.backdrop = trakt.resizeImage(traktInfo.images.fanart, '940');
+                                            movieModel.image = traktInfo.images.poster.thumb;
+                                            movieModel.bigImage = traktInfo.images.poster.full;
+                                            movieModel.backdrop = traktInfo.images.fanart.full;
                                             movieModel.synopsis = traktInfo.overview;
                                             movieModel.runtime = +traktInfo.runtime;
                                         }

@@ -31,7 +31,7 @@
         jqueryOptions.crossDomain = options.crossDomain;
 
         if (options.crossDomain && $.support.cors) {
-            jqueryOptions.url = 'http://localhost:3000/proxy/' + jqueryOptions.url;
+            jqueryOptions.url = 'http://192.168.1.65:3000/proxy/' + jqueryOptions.url;
         }
 
         $.ajax(jqueryOptions)

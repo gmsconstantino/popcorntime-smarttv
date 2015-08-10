@@ -6,7 +6,7 @@ define(['App', 'jquery', 'backbone'],
             //console.log(file, subtitles, callback, progressCallback);
             $.ajax({
                 //PC server ip
-                url:"http://192.168.1.146:3000/?torrent="+file,
+                url:"http://192.168.1.65:3000/?torrent="+file,
                 dataType:'text',
                 type:'GET',
                 success:function( data ) {

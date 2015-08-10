@@ -1,7 +1,10 @@
- define(['backbone','Q'],
-    function(_, Q) {
+ define(['backbone','Q','jscache'],
+    function(_, Q, jscache) {
         //var db = openDatabase('cachedb', '', 'Cache database', 50 * 1024 * 1024);
-        var Cache = {
+        var cache = new jscache(-1, false, new jscache.LocalStorageCacheStorage());
+
+        var Cache = {    
+
             clear: function () {
                 /*db.transaction(function (tx) {
                     tx.executeSql('DELETE FROM trakttv');
@@ -59,7 +62,7 @@
                 if (typeof key !== 'string') {
                     key = JSON.stringify(key);
                 }
-                cb();
+                cb(JSON.parse(cache.getItem(key)));
                 /*db.transaction(function (tx) {
                     tx.executeSql('SELECT data FROM ' + provider + ' WHERE key = ?', [key], function (tx, results) {
                         try {
@@ -107,6 +110,9 @@
                 if (typeof data !== 'string') {
                     data = JSON.stringify(data);
                 }
+
+                cache.setItem(key, data, { expirationSliding: ttl });
+
                 /*
                 db.transaction(function (tx) {
                     tx.executeSql('CREATE TABLE IF NOT EXISTS ' + provider + ' (key TEXT, data TEXT)');
