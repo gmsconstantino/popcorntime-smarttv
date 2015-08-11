@@ -4,19 +4,20 @@
   <cpname itemtype="string"/>  
   <cplogo itemtype="string"/>  
   <cpauthjs itemtype="string"/>  
-  <ThumbIcon itemtype="string"/>  
-  <BigThumbIcon itemtype="string"/>  
-  <ListIcon itemtype="string"/>  
-  <BigListIcon itemtype="string"/>  
+  <ThumbIcon>icon/nw_106.png</ThumbIcon>
+  <BigThumbIcon>icon/nw_115.png</BigThumbIcon>
+  <ListIcon>icon/nw_85.png</ListIcon>
+  <BigListIcon>icon/nw_95.png</BigListIcon>
   <category itemtype="string"/>  
-  <autoUpdate itemtype="boolean">n</autoUpdate>  
+  <autoUpdate itemtype="boolean">y</autoUpdate>  
   <ver itemtype="string">0.100</ver>  
   <mgrver itemtype="string"/>  
   <fullwidget itemtype="boolean">y</fullwidget>  
   <type itemtype="string">user</type>  
   <srcctl itemtype="boolean">y</srcctl>  
   <ticker itemtype="boolean">n</ticker>  
-  <childlock itemtype="boolean">n</childlock>  
+  <childlock itemtype="boolean">n</childlock>
+  <mouse itemtype="boolean">y</mouse>
   <videomute itemtype="boolean">n</videomute>  
   <dcont itemtype="boolean">y</dcont>  
   <widgetname itemtype="string">popcorntime</widgetname>  

@@ -1,5 +1,5 @@
- define(['jquery', 'underscore', 'backbone', 'models/Movie', 'providers/Ysubs', 'others/Cache', 'providers/trakttv', 'async'],
-    function($, _, Backbone, Movie, Ysubs, Cache, trakt, async) {
+ define(['jquery', 'underscore', 'backbone', 'models/Movie', 'providers/Ysubs', 'others/Cache', 'providers/trakttv', 'async', 'others/logging'],
+    function($, _, Backbone, Movie, Ysubs, Cache, trakt, async, Log) {
 
     function request (uri, options, callback) {
         if (typeof uri === 'undefined') throw new Error('undefined is not a valid uri or options object.');
@@ -29,11 +29,11 @@
 
         $.ajax(jqueryOptions)
             .done(function(data, status, xhr) {
-                console.debug("%O", data);
+                Log.debug("Request from YTS (Ok): %s", jqueryOptions.url);
                 callback(undefined, xhr, data);
             })
             .fail(function(xhr, status, err) {
-                console.error("%O", data);
+                Log.error("%O", err);
                 callback(err, xhr, undefined);
             });
     }
@@ -93,9 +93,9 @@
         },
 
         addMovie: function(model) {
-            console.log(this.movies);
+            Log.log(this.movies);
             var stored = _.find(this.movies, function(movie) { return (movie.imdb_code == model.imdb); });
-            console.log(stored);
+            Log.log(stored);
             // Create it on memory map if it doesn't exist.
             if (typeof stored === 'undefined') {
                 stored = model;
@@ -127,10 +127,10 @@
                 currentRequest.abort();
             }
 
-            console.debug('Requesting from YTS: %s', this.apiUrl);
-            console.time('YTS Request Took');
+            Log.debug('Requesting from YTS: %s', this.apiUrl);
+            Log.time('YTS Request Took');
             var thisRequest = request(this.apiUrl, {json: true}, function(err, res, ytsData) {
-                console.timeEnd('YTS Request Took');
+                Log.timeEnd('YTS Request Took');
                 var i = 0;
 
                 if(status === 'error') {
@@ -150,7 +150,7 @@
 
                 Ysubs.fetch(_.map(imdbIds, function(id){return id.replace('tt','');}))
                 .then(function(subtitles) {
-                    console.log(subtitles);
+                    Log.log("Cache size: %j", Object.keys(subtitles).length);
                     
                     async.filterSeries(
                       imdbIds,
@@ -161,7 +161,8 @@
 
                         var traktMovieCollection = new trakt.MovieCollection(imdbCodes);
 
-                        traktMovieCollection.getSummaries(function(trakData) {
+                        traktMovieCollection.getSummaries().then(function(trakData) {
+                            Log.log('getSummaries callback');
                             // Check if new request was started
                             if(thisRequest !== currentRequest) return;
 
@@ -169,6 +170,8 @@
                             ytsData.MovieList.forEach(function (movie) {
                                 // No imdb, no movie.
                                 if( typeof movie.imdb_code != 'string' || movie.imdb_code.replace('tt', '') === '' ){ return; }
+
+                                Log.log('Create movie data '+movie.imdb_code); 
 
                                 var traktInfo = _.find(trakData, function(trakMovie) { return trakMovie.ids.imdb == movie.imdb_code; });
 
@@ -215,7 +218,7 @@
                                     movieModel.synopsis = traktInfo.overview;
                                     movieModel.runtime = +traktInfo.runtime;
                                     Cache.setItem('trakttv', traktInfo.ids.imdb, traktInfo);
-                                    console.warn('Trakt.tv Cache Miss %O', traktInfo);
+                                    Log.debug('Trakt.tv Cache Miss %O', traktInfo);
                                     collection.addMovie(movieModel);
                                     if(--i === 0) {
                                         collection.set(collection.movies);
@@ -230,12 +233,12 @@
                                             movieModel.synopsis = traktInfo.overview;
                                             movieModel.runtime = +traktInfo.runtime;
                                         }
-                                        console.debug('Trakt.tv Cache Hit %O', traktInfo);
+                                        Log.debug('Trakt.tv Cache Hit %O', traktInfo);
                                         collection.addMovie(movieModel);
                                         if(--i === 0) {
-                                            console.log(collection.movies);
                                             collection.set(collection.movies);
                                             collection.trigger('loaded');
+                                            Log.log("Collection Movies trigger loaded");
                                         }
                                     });
                                 }

@@ -1,6 +1,14 @@
 module.exports = function(grunt) {
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
+        samsung: {
+            default_options:{
+                options: {
+                  samsungApp:'./dist/',
+                  appId: '0.0.10'
+                }
+            }
+        },
         requirejs: {
             dist: {
                 options: {
@@ -9,7 +17,7 @@ module.exports = function(grunt) {
                     preserveLicenseComments : false,
                     inlineText : true,
                     findNestedDependencies : true,
-                    mainConfigFile: "src/app/config/config.js",
+                    mainConfigFile: "src/app/config/require_config.js",
                     paths : {
                       requireLib : '../libs/require'
                     },
@@ -42,19 +50,12 @@ module.exports = function(grunt) {
         },
         watch: {
           scripts: {
-            files: ['src/app/**/*.js'],
+            files: ['src/app/**/*.js','assets/**'],
             tasks: ['build'],
             options: {
               spawn: false
             }
           }
-        },
-        samsung: {
-            default_options:{
-                options: {
-                  samsungApp:'./dist/'
-                }
-            }
         },
         sync: {
           assets: {
@@ -74,7 +75,8 @@ module.exports = function(grunt) {
                 'index.html',
                 'config.xml',
                 'widget.info',
-                'Main.js'
+                'Main.js',
+                'icon/*'
               ],
               dest: 'dist/',
             }],
@@ -101,7 +103,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-contrib-requirejs');
     grunt.registerTask('server', ['build','express:dev']);
-    grunt.registerTask('deploy', ['samsung']);
+    grunt.registerTask('deploy', ['build','samsung']);
     grunt.registerTask('build', ['jshint', 'requirejs:dist', 'sync:assets', 'sync:src']);
     grunt.registerTask('default', ['build']);
 };

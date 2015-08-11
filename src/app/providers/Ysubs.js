@@ -1,5 +1,5 @@
- define(['jquery', 'underscore', 'Q', 'others/Cache', 'others/language'],
-    function($, _, Q, Cache, Lang) {
+ define(['jquery', 'underscore', 'Q', 'others/Cache', 'others/language', 'config', 'others/logging'],
+    function($, _, Q, Cache, Lang,  config, Log) {
     "use strict";
 
     function request (uri, options, callback) {
@@ -31,16 +31,16 @@
         jqueryOptions.crossDomain = options.crossDomain;
 
         if (options.crossDomain && $.support.cors) {
-            jqueryOptions.url = 'http://192.168.1.65:3000/proxy/' + jqueryOptions.url;
+            jqueryOptions.url = 'http://' + config.host + '/proxy/' + jqueryOptions.url;
         }
 
         $.ajax(jqueryOptions)
             .done(function(data, status, xhr) {
-                console.debug("%O", data);
+                Log.debug("Request from YSubs (Ok): %s", jqueryOptions.url);
                 callback(undefined, xhr, data);
             })
             .fail(function(xhr, status, err) {
-                console.error("%O", err);
+                Log.error("%O", err);
                 callback(err, xhr, undefined);
             });
     }
@@ -49,7 +49,7 @@
     var prefix = 'http://www.ysubs.com';
     var cacheNamespace = 'ysubs';
 
-    var TTL = 1000 * 60 * 60 * 4; // 4 hours
+    var TTL = 1000 * 60 * 60 * 0.1; // 6 min
 
     var YSubs = {};
 
@@ -63,10 +63,10 @@
             return deferred.promise;
         }
 
-        console.debug('Requesting from YSubs: %s', url);
-        console.time('YSubs Request Took');
+        Log.debug('Requesting from YSubs: %s', url);
+        Log.time('YSubs Request Took');
         request({url:url, json: true, crossDomain:true}, function(error, response, data){
-            console.timeEnd('YSubs Request Took');
+            Log.timeEnd('YSubs Request Took');
             if(error) {
                 deferred.reject(error);
             }
@@ -109,7 +109,7 @@
         var ysubsPromise = cachePromise.then(function(cachedSubs){
                 // Filter out cached subtitles
                 var cachedIds = _.keys(cachedSubs);
-                console.log(cachedIds.length + ' cached subtitles');
+                Log.log(cachedIds.length + ' cached subtitles');
                 var filteredId = _.difference(imdbIds, cachedIds);
                 return filteredId;
             })
@@ -118,7 +118,7 @@
 
         // Cache ysubs subtitles
         ysubsPromise.then(function(moviesSubs) {
-                console.log('Cache ' + _.keys(moviesSubs).length + ' subtitles');
+                Log.log('Cache ' + _.keys(moviesSubs).length + ' subtitles');
                 _.each(moviesSubs, function(movieSubs, imdbId) {
                     Cache.setItem(cacheNamespace, imdbId, movieSubs, TTL);
                 });

@@ -1,5 +1,5 @@
-define(['jquery', 'underscore', 'Q'],
-	function($, _, Q) {
+define(['jquery', 'underscore', 'Q', 'config', 'others/logging'],
+	function($, _, Q, config, Log) {
 		// Tempoary wrapper around $.get for request
 		function request (uri, options, callback) {
 			if (typeof uri === 'undefined') throw new Error('undefined is not a valid uri or options object.');
@@ -16,7 +16,7 @@ define(['jquery', 'underscore', 'Q'],
 				url: options.uri || options.url
 			};
 			if(options.json)
-				jqueryOptions.dataType = 'jsonp';
+				jqueryOptions.dataType = 'json';
 			if(options.headers)
 				jqueryOptions.headers = options.headers;
 			if(options.method)
@@ -27,14 +27,17 @@ define(['jquery', 'underscore', 'Q'],
 				jqueryOptions.timeout = options.timeout;
 
 			if (options.crossDomain && $.support.cors) {
-            	jqueryOptions.url = 'http://192.168.1.65:3000/proxy/' + jqueryOptions.url;
+            	jqueryOptions.url = 'http://' + config.host + '/proxy/' + jqueryOptions.url;
+            	//jqueryOptions.jsonp = false;
         	}
 
 			$.ajax(jqueryOptions)
 				.done(function(data, status, xhr) {
+					Log.debug("Request from Trakt (Ok): %s", jqueryOptions.url);
 					callback(undefined, xhr, data);
 				})
 				.fail(function(xhr, status, err) {
+					Log.error('Requesting from Trakt (Error): %s', jqueryOptions.url);
 					callback(err, xhr, undefined);
 				});
 		}
@@ -52,9 +55,12 @@ define(['jquery', 'underscore', 'Q'],
 		}
 
 		MovieCollection.prototype.getSummaries = function(callback) {
+			
+			var deferred = Q.defer();
+
 			if(this.ids.length === 0) {
-				callback([]);
-				return;
+				deferred.resolve([]);
+            	return deferred.promise;
 			}
 
 			data = [];
@@ -64,21 +70,29 @@ define(['jquery', 'underscore', 'Q'],
 				var uri = API_ENDPOINT.clone().segment(['movies', id]);
 				uri = uri.toString() + '?extended=full,images';
 
-		        console.debug('Requesting from Trakt.tv: %s', uri);
-				console.time('Trakt.tv Request Took');
+		        Log.debug('Requesting from Trakt.tv: %s', uri);
+				//Log.time('Trakt.tv Request Took');
 				request(uri, {json: true, crossDomain:true, 
 					headers: {
-	                'Content-Type': 'application/json',
 	                'trakt-api-version': '2',
 	                'trakt-api-key': CLIENT_ID
 	            }}, function(err, res, body) {
-					console.timeEnd('Trakt.tv Request Took');
+					//Log.timeEnd('Trakt.tv Request Took');
 					data.push(JSON.parse(res.responseText));
 
-					if(data.length === ids.length)
-						callback(data);
+					Log.log("Trakt callback Movie "+body.ids.imdb);
+
+					if(err) {
+		                deferred.reject(error);
+			        }
+
+					if(data.length === ids.length){
+		                deferred.resolve(data);
+					}
 				});
 			});
+
+			return deferred.promise;
 		};
 
 		this.resizeImage = function(imageUrl, width) {
